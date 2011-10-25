@@ -5,8 +5,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
+#include "playback.h"
 
-#define MAXBUFFERLEN 512
+
+#define MAXBUFFERLEN 1024
 int creer_socket_udp();
 int  bind_socket_udp(int sockfd,int port);
 int handleClient(int,struct sockaddr_in,socklen_t*);
@@ -19,6 +22,8 @@ int main(){
         
 }
 int server_ClientSide(){
+        FILE* fichier = NULL;
+        fichier = fopen("sound.raw", "rb");
         char buffer[MAXBUFFERLEN];
         int nbrReceiv;
         struct sockaddr_in client_addr;
@@ -29,22 +34,33 @@ int server_ClientSide(){
                 printf("[.] Debug server_clientSide 1 : erreur creating socket\n");
                 return -1;
         }
+        
         else
-                 printf("[X] Creation of socket done.\n");
+                // printf("[X] Creation of socket done.\n");
+       
         if(bind_socket_udp(sockfd,4445) == -1)  {
                 printf("[.] Debug server_clientSide 2 : erreur binding\n");
                 return -1;
          }
          else
-                printf("[X] Binding port done.\n");
+              //  printf("[X] Binding port done.\n");
              
         size = sizeof(struct sockaddr);
+        int rc;
+        
         while(1){
-         if ((nbrReceiv=recvfrom(sockfd, buffer, MAXBUFFERLEN, 0,(struct sockaddr *)&client_addr, &size)) == -1) {
-             printf("[.] Debug server_clientSide 3 : Error receiving\n");
-             return -1;
-          }
-          handleClient(sockfd,client_addr,&size);
+               /* if((nbrReceiv=recvfrom(sockfd, buffer, 1024, 0,(struct sockaddr *)&client_addr, &size)) == -1) {
+                     printf("[.] Debug server_clientSide 3 : Error receiving\n");
+                     return -1;
+                 }*/
+        //  write(STDOUT_FILENO, buffer, nbrReceiv);
+          fread(buffer, 1024, 1, fichier); 
+       //   buffer[nbrReceiv - 1] = '\0';
+       
+        // fwrite(buffer,nbrReceiv,1,fichier);
+         if(makingSound(buffer) == -1)
+                printf("problem");
+       //   handleClient(sockfd,client_addr,&size);
         }
 }      
 
@@ -80,7 +96,7 @@ int bind_socket_udp(int sockfd,int port){
 
 //s'occupe de recevoir ce que envoit le client
 int handleClient(int sockfd,struct sockaddr_in client_addr,socklen_t *size){
-     fprintf(stdout,"===== IP : %s === PORT : %d === ",inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
+     printf("===== IP : %s === PORT : %d === ",inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
      sendto(sockfd, "HELLO WORLD!\n", 12,0,  (struct sockaddr *)&client_addr, *size);
      return 0;
 }
