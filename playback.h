@@ -1,0 +1,1 @@
+int makingSound(char *buffer);
